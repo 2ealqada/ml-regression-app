@@ -30,4 +30,18 @@ with col1:
 
     st.write("Spaltennamen:")
     st.write(df.columns.tolist())
-    
+    #datenüberprufung 
+    st.subheader("Datenüberprüfung")
+    Fehlende_werte = df.isnull().sum().sum()
+    Duplikate = df.duplicated().sum()
+    col1,col2 = st.columns(2)
+    with col1:
+        st.metric(label="Fehlende Werte",value= int ( Fehlende_werte))
+
+        
+    with col2:
+        st.metric(label="Duplikate",value= int ( Duplikate))
+
+    st.write("Zielvariable:")
+    st.code("Concrete compressive strength(MPa, megapascals)")
+
