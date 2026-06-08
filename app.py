@@ -1,5 +1,6 @@
 import streamlit as st 
 import pandas as pd
+from sklearn.model_selection import train_test_split 
 st.set_page_config(page_title = "ML Regression App", page_icon = "🤖",layout= "wide")
 st.title("ML Regression App")
 st.subheader("Random Forest vs. kNN")
@@ -31,7 +32,7 @@ with col1:
     st.write("Spaltennamen:")
     st.write(df.columns.tolist())
     #datenüberprufung 
-    st.subheader("Datenüberprüfung")
+    st.subheader("2.Datenüberprüfung")
     Fehlende_werte = df.isnull().sum().sum()
     Duplikate = df.duplicated().sum()
     col1,col2 = st.columns(2)
@@ -44,4 +45,20 @@ with col1:
 
     st.write("Zielvariable:")
     st.code("Concrete compressive strength(MPa, megapascals)")
+    st.header("3.Train-Test-Split")
+    target_column = df.columns[-1]
+
+    X = df.drop(columns=[target_column])
+    y = df[target_column]
+
+    st.write("Verwendete Zielvariable:")
+    st.code(target_column)
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size= 0.2,random_state= 42)
+    col1,col2 = st.columns(2)
+    with col1: 
+        st.metric(label = "Trainingsdaten",value= X_train.shape[0])
+        with col2:
+            st.metric(label = "Testdaten",value= X_test.shape[0])
+            st.success("Train/Test Split wurde erfolgreich durchgeführt.")
+
 
