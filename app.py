@@ -1,6 +1,11 @@
 import streamlit as st 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split 
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
+from sklearn.model_selection import RandomizedSearchCV
+
 st.set_page_config(page_title = "ML Regression App", page_icon = "🤖",layout= "wide")
 st.title("ML Regression App")
 st.subheader("Random Forest vs. kNN")
@@ -45,6 +50,10 @@ with col1:
 
     st.write("Zielvariable:")
     st.code("Concrete compressive strength(MPa, megapascals)")
+    original_rows = df.shape[0]
+    duplicates = df.duplicated().sum()
+    df = df.drop_duplicates()
+    cleaned_rows = df.shape[0]
     st.header("3.Train-Test-Split")
     target_column = df.columns[-1]
 
@@ -61,4 +70,51 @@ with col1:
             st.metric(label = "Testdaten",value= X_test.shape[0])
             st.success("Train/Test Split wurde erfolgreich durchgeführt.")
 
+            st.subheader("4. Random Forest Modell")
 
+if st.button("Random Forest trainieren"):
+    rf_base_model = RandomForestRegressor(random_state=42)
+
+    param_grid = {
+        "n_estimators": [50, 100, 200, 300],
+        "max_depth": [None, 10, 20, 30, 40, 50],
+        "min_samples_split": [2, 5, 10],
+        "min_samples_leaf": [1, 2, 4]
+    }
+
+    rf_search = RandomizedSearchCV(
+        estimator=rf_base_model,
+        param_distributions=param_grid,
+        n_iter=50,
+        cv=10,
+        scoring="neg_mean_absolute_error",
+        random_state=42,
+        n_jobs=-1
+    )
+
+    with st.spinner("Random Forest Modell wird trainiert und optimiert..."):
+        rf_search.fit(X_train, y_train)
+
+    best_rf_model = rf_search.best_estimator_
+
+    y_pred_rf = best_rf_model.predict(X_test)
+
+    mae_rf = mean_absolute_error(y_test, y_pred_rf)
+    rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
+    r2_rf = r2_score(y_test, y_pred_rf)
+
+    st.success("Random Forest Modell erfolgreich trainiert!")
+
+    st.subheader("Beste Hyperparameter")
+    st.write(rf_search.best_params_)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(label="MAE", value=round(mae_rf, 2))
+
+    with col2:
+        st.metric(label="RMSE", value=round(rmse_rf, 2))
+
+    with col3:
+        st.metric(label="R²", value=round(r2_rf, 2))
