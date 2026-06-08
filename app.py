@@ -5,7 +5,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
 from sklearn.model_selection import RandomizedSearchCV
-
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
 st.set_page_config(page_title = "ML Regression App", page_icon = "🤖",layout= "wide")
 st.title("ML Regression App")
 st.subheader("Random Forest vs. kNN")
@@ -59,6 +62,7 @@ with col1:
 
     X = df.drop(columns=[target_column])
     y = df[target_column]
+   
 
     st.write("Verwendete Zielvariable:")
     st.code(target_column)
@@ -68,9 +72,9 @@ with col1:
         st.metric(label = "Trainingsdaten",value= X_train.shape[0])
         with col2:
             st.metric(label = "Testdaten",value= X_test.shape[0])
-            st.success("Train/Test Split wurde erfolgreich durchgeführt.")
-
-            st.subheader("4. Random Forest Modell")
+st.success("Train/Test Split wurde erfolgreich durchgeführt.")
+            
+st.subheader("1. Random Forest Modell")
 
 if st.button("Random Forest trainieren"):
     rf_base_model = RandomForestRegressor(random_state=42)
@@ -118,3 +122,51 @@ if st.button("Random Forest trainieren"):
 
     with col3:
         st.metric(label="R²", value=round(r2_rf, 2))
+st.subheader("2. kNN Modell")
+
+if st.button("kNN trainieren"):
+    knn_pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("knn_model", KNeighborsRegressor())
+    ])
+
+    knn_param_grid = {
+        "knn_model__n_neighbors": [3, 5, 7, 9, 11, 13, 15, 30],
+        "knn_model__weights": ["uniform", "distance"],
+        "knn_model__metric": ["euclidean", "manhattan"]
+    }
+
+    knn_search = GridSearchCV(
+        estimator=knn_pipeline,
+        param_grid=knn_param_grid,
+        cv=10,
+        scoring="neg_mean_absolute_error",
+        n_jobs=-1
+    )
+
+    with st.spinner("kNN Modell wird trainiert und optimiert..."):
+        knn_search.fit(X_train, y_train)
+
+    best_knn_model = knn_search.best_estimator_
+
+    y_pred_knn = best_knn_model.predict(X_test)
+
+    mae_knn = mean_absolute_error(y_test, y_pred_knn)
+    rmse_knn = np.sqrt(mean_squared_error(y_test, y_pred_knn))
+    r2_knn = r2_score(y_test, y_pred_knn)
+
+    st.success("kNN Modell erfolgreich trainiert!")
+
+    st.subheader("Beste Hyperparameter")
+    st.write(knn_search.best_params_)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(label="MAE", value=round(mae_knn, 2))
+
+    with col2:
+        st.metric(label="RMSE", value=round(rmse_knn, 2))
+
+    with col3:
+        st.metric(label="R²", value=round(r2_knn, 2))
