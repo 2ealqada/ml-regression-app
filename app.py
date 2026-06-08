@@ -170,3 +170,84 @@ if st.button("kNN trainieren"):
 
     with col3:
         st.metric(label="R²", value=round(r2_knn, 2))
+st.header("4. Modellvergleich")
+
+if st.button("Beide Modelle trainieren und vergleichen"):
+
+    # Random Forest
+    rf_base_model = RandomForestRegressor(random_state=42)
+
+    rf_param_grid = {
+        "n_estimators": [50, 100, 200, 300],
+        "max_depth": [None, 10, 20, 30, 40, 50],
+        "min_samples_split": [2, 5, 10],
+        "min_samples_leaf": [1, 2, 4]
+    }
+
+    rf_search = RandomizedSearchCV(
+        estimator=rf_base_model,
+        param_distributions=rf_param_grid,
+        n_iter=50,
+        cv=10,
+        scoring="neg_mean_absolute_error",
+        random_state=42,
+        n_jobs=-1
+    )
+
+    # kNN
+    knn_pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("knn_model", KNeighborsRegressor())
+    ])
+
+    knn_param_grid = {
+        "knn_model__n_neighbors": [3, 5, 7, 9, 11, 13, 15, 30],
+        "knn_model__weights": ["uniform", "distance"],
+        "knn_model__metric": ["euclidean", "manhattan"]
+    }
+
+    knn_search = GridSearchCV(
+        estimator=knn_pipeline,
+        param_grid=knn_param_grid,
+        cv=10,
+        scoring="neg_mean_absolute_error",
+        n_jobs=-1
+    )
+
+    with st.spinner("Beide Modelle werden trainiert und optimiert..."):
+        rf_search.fit(X_train, y_train)
+        knn_search.fit(X_train, y_train)
+
+    best_rf_model = rf_search.best_estimator_
+    best_knn_model = knn_search.best_estimator_
+
+    y_pred_rf = best_rf_model.predict(X_test)
+    y_pred_knn = best_knn_model.predict(X_test)
+
+    mae_rf = mean_absolute_error(y_test, y_pred_rf)
+    rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
+    r2_rf = r2_score(y_test, y_pred_rf)
+
+    mae_knn = mean_absolute_error(y_test, y_pred_knn)
+    rmse_knn = np.sqrt(mean_squared_error(y_test, y_pred_knn))
+    r2_knn = r2_score(y_test, y_pred_knn)
+
+    results_df = pd.DataFrame({
+        "Modell": ["Random Forest", "kNN"],
+        "MAE": [mae_rf, mae_knn],
+        "RMSE": [rmse_rf, rmse_knn],
+        "R²": [r2_rf, r2_knn]
+    })
+
+    st.success("Modellvergleich wurde erfolgreich erstellt.")
+
+    st.subheader("Vergleich der Modelle")
+    st.dataframe(results_df.round(3))
+
+    st.subheader("Beste Hyperparameter")
+
+    st.write("Random Forest:")
+    st.write(rf_search.best_params_)
+
+    st.write("kNN:")
+    st.write(knn_search.best_params_)
