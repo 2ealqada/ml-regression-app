@@ -1,6 +1,7 @@
 import streamlit as st 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
@@ -243,7 +244,7 @@ if st.button("Beide Modelle trainieren und vergleichen"):
 
     st.subheader("Vergleich der Modelle")
     st.dataframe(results_df.round(3))
-
+    
     st.subheader("Beste Hyperparameter")
 
     st.write("Random Forest:")
@@ -251,3 +252,21 @@ if st.button("Beide Modelle trainieren und vergleichen"):
 
     st.write("kNN:")
     st.write(knn_search.best_params_)
+
+    st.subheader("5. Prediction vs. Real")
+
+    fig, ax = plt.subplots()
+    ax.scatter(y_test, y_pred_rf, label="Random Forest", alpha=0.7)
+    ax.scatter(y_test, y_pred_knn, label="kNN", alpha=0.7)
+
+    min_value = min(y_test.min(), y_pred_rf.min(), y_pred_knn.min())
+    max_value = max(y_test.max(), y_pred_rf.max(), y_pred_knn.max())
+
+    ax.plot([min_value, max_value], [min_value, max_value], linestyle="--")
+
+    ax.set_xlabel("Reale Werte")
+    ax.set_ylabel("Vorhergesagte Werte")
+    ax.set_title("Prediction vs. Real")
+    ax.legend()
+
+    st.pyplot(fig)
