@@ -270,3 +270,25 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax.legend()
 
     st.pyplot(fig)
+    st.subheader("Feature Importance - Random Forest")
+
+    feature_importance = pd.DataFrame({
+        "Feature": X.columns,
+        "Importance": best_rf_model.feature_importances_
+    }).sort_values(by="Importance", ascending=False)
+
+    st.dataframe(feature_importance.round(4))
+
+    fig_importance, ax_importance = plt.subplots()
+
+    ax_importance.barh(
+        feature_importance["Feature"],
+        feature_importance["Importance"]
+    )
+
+    ax_importance.set_xlabel("Importance")
+    ax_importance.set_ylabel("Feature")
+    ax_importance.set_title("Feature Importance - Random Forest")
+    ax_importance.invert_yaxis()
+
+    st.pyplot(fig_importance)
