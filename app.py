@@ -10,6 +10,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
+
 st.set_page_config(page_title = "ML Regression App", page_icon = "🤖",layout= "wide")
 st.title("ML Regression App")
 st.subheader("Random Forest vs. kNN")
@@ -33,63 +34,65 @@ st.write("Datensatz-Informationen:")
 col1,col2 = st.columns(2)
 
 with col1:
-    st.metric("Zeilen",value = df.shape[0])
-    with col2:
-        st.metric("Spalten",value = df.shape[1])
+ st.metric("Zeilen",value = df.shape[0])
+ with col2:
+  st.metric("Spalten",value = df.shape[1])
 
 
-    st.write("Spaltennamen:")
-    st.write(df.columns.tolist())
+ st.write("Spaltennamen:")
+ st.write(df.columns.tolist())
     #datenüberprufung 
-    st.subheader("2.Datenüberprüfung")
-    Fehlende_werte = df.isnull().sum().sum()
-    Duplikate = df.duplicated().sum()
-    col1,col2 = st.columns(2)
-    with col1:
-        st.metric(label="Fehlende Werte",value= int ( Fehlende_werte))
+ st.subheader("2.Datenüberprüfung")
+Fehlende_werte = df.isnull().sum().sum()
+Duplikate = df.duplicated().sum()
+col1,col2 = st.columns(2)
+with col1:
+ st.metric(label="Fehlende Werte",value= int ( Fehlende_werte))
 
         
-    with col2:
-        st.metric(label="Duplikate",value= int ( Duplikate))
+with col2:
+  st.metric(label="Duplikate",value= int ( Duplikate))
 
-    st.write("Zielvariable:")
-    st.code("Concrete compressive strength(MPa, megapascals)")
-    original_rows = df.shape[0]
-    duplicates = df.duplicated().sum()
-    df = df.drop_duplicates()
-    cleaned_rows = df.shape[0]
-    st.header("3.Train-Test-Split")
-    target_column = df.columns[-1]
+st.write("Zielvariable:")
+st.code("Concrete compressive strength(MPa, megapascals)")
+original_rows = df.shape[0]
+duplicates = df.duplicated().sum()
+df = df.drop_duplicates()
+cleaned_rows = df.shape[0]
+st.header("3.Train-Test-Split")
+target_column = df.columns[-1]
 
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
+X = df.drop(columns=[target_column])
+y = df[target_column]
    
 
-    st.write("Verwendete Zielvariable:")
-    st.code(target_column)
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size= 0.2,random_state= 42)
-    col1,col2 = st.columns(2)
-    with col1: 
-        st.metric(label = "Trainingsdaten",value= X_train.shape[0])
-        with col2:
-            st.metric(label = "Testdaten",value= X_test.shape[0])
+st.write("Verwendete Zielvariable:")
+st.code(target_column)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size= 0.2,random_state= 42)
+col1,col2 = st.columns(2)
+with col1: 
+ st.metric(label = "Trainingsdaten",value= X_train.shape[0])
+with col2:
+    st.metric(label = "Testdaten",value= X_test.shape[0])
 st.success("Train/Test Split wurde erfolgreich durchgeführt.")
             
-st.subheader("1. Random Forest Modell")
+st.subheader("a. Random Forest Modell")
 
 if st.button("Random Forest trainieren"):
-    rf_base_model = RandomForestRegressor(random_state=42)
+    rf_pipeline = Pipeline([
+        ("rf", RandomForestRegressor(random_state=42))
+    ])
 
-    param_grid = {
-        "n_estimators": [50, 100, 200, 300],
-        "max_depth": [None, 10, 20, 30, 40, 50],
-        "min_samples_split": [2, 5, 10],
-        "min_samples_leaf": [1, 2, 4]
+    rf_param_grid = {
+        "rf__n_estimators": [50, 100, 200, 300],
+        "rf__max_depth": [None, 10, 20, 30, 40, 50],
+        "rf__min_samples_split": [2, 5, 10],
+        "rf__min_samples_leaf": [1, 2, 4]
     }
 
     rf_search = RandomizedSearchCV(
-        estimator=rf_base_model,
-        param_distributions=param_grid,
+        estimator=rf_pipeline,
+        param_distributions=rf_param_grid,
         n_iter=50,
         cv=10,
         scoring="neg_mean_absolute_error",
@@ -123,7 +126,8 @@ if st.button("Random Forest trainieren"):
 
     with col3:
         st.metric(label="R²", value=round(r2_rf, 2))
-st.subheader("2. kNN Modell")
+
+st.subheader("b. kNN Modell")
 
 if st.button("kNN trainieren"):
     knn_pipeline = Pipeline([
@@ -175,18 +179,21 @@ st.header("4. Modellvergleich")
 
 if st.button("Beide Modelle trainieren und vergleichen"):
 
-    # Random Forest
-    rf_base_model = RandomForestRegressor(random_state=42)
+       # Random Forest
+    rf_pipeline = Pipeline([
+        ("rf", RandomForestRegressor(random_state=42))
+    ])
 
     rf_param_grid = {
-        "n_estimators": [50, 100, 200, 300],
-        "max_depth": [None, 10, 20, 30, 40, 50],
-        "min_samples_split": [2, 5, 10],
-        "min_samples_leaf": [1, 2, 4]
+        "rf__n_estimators": [50, 100, 200, 300],
+        "rf__max_features": ["sqrt", "log2"],
+        "rf__max_depth": [None, 10, 20, 30,40,50],
+        "rf__min_samples_split": [2, 5, 10],
+        "rf__min_samples_leaf": [1, 2, 4]
     }
 
     rf_search = RandomizedSearchCV(
-        estimator=rf_base_model,
+        estimator=rf_pipeline,
         param_distributions=rf_param_grid,
         n_iter=50,
         cv=10,
@@ -194,7 +201,6 @@ if st.button("Beide Modelle trainieren und vergleichen"):
         random_state=42,
         n_jobs=-1
     )
-
     # kNN
     knn_pipeline = Pipeline([
         ("scaler", StandardScaler()),
@@ -202,7 +208,7 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ])
 
     knn_param_grid = {
-        "knn_model__n_neighbors": [3, 5, 7, 9, 11, 13, 15, 30],
+        "knn_model__n_neighbors": [3, 5, 7, 9, 11, 13, 15],
         "knn_model__weights": ["uniform", "distance"],
         "knn_model__metric": ["euclidean", "manhattan"]
     }
@@ -270,11 +276,14 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax.legend()
 
     st.pyplot(fig)
-    st.subheader("6.Feature Importance - Random Forest")
+
+    st.subheader("6. Feature Importance - Random Forest")
+
+    rf_model_inside_pipeline = best_rf_model.named_steps["rf"]
 
     feature_importance = pd.DataFrame({
         "Feature": X.columns,
-        "Importance": best_rf_model.feature_importances_
+        "Importance": rf_model_inside_pipeline.feature_importances_
     }).sort_values(by="Importance", ascending=False)
 
     st.dataframe(feature_importance.round(4))
@@ -292,6 +301,8 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax_importance.invert_yaxis()
 
     st.pyplot(fig_importance)
+
+    
     st.subheader("7.Metriken als Balkendiagramm")
 
     metrics_plot_df = results_df.set_index("Modell")[["MAE", "RMSE", "R²"]]
@@ -306,3 +317,15 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax_metrics.legend(title="Metrik")
 
     st.pyplot(fig_metrics)
+    st.subheader("Kurze Interpretation")
+
+    if mae_rf < mae_knn and rmse_rf < rmse_knn and r2_rf > r2_knn:
+        st.success(
+            "Random Forest erzielt in diesem Vergleich die bessere Modellleistung. "
+            "Das Modell hat niedrigere Fehlerwerte und ein höheres R² als kNN."
+        )
+    else:
+        st.info(
+            "Die Ergebnisse zeigen Unterschiede zwischen Random Forest und kNN. "
+            "Die Bewertung sollte anhand von MAE, RMSE und R² gemeinsam erfolgen."
+        )
