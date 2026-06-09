@@ -270,7 +270,7 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax.legend()
 
     st.pyplot(fig)
-    st.subheader("Feature Importance - Random Forest")
+    st.subheader("6.Feature Importance - Random Forest")
 
     feature_importance = pd.DataFrame({
         "Feature": X.columns,
@@ -292,3 +292,17 @@ if st.button("Beide Modelle trainieren und vergleichen"):
     ax_importance.invert_yaxis()
 
     st.pyplot(fig_importance)
+    st.subheader("7.Metriken als Balkendiagramm")
+
+    metrics_plot_df = results_df.set_index("Modell")[["MAE", "RMSE", "R²"]]
+
+    fig_metrics, ax_metrics = plt.subplots()
+
+    metrics_plot_df.plot(kind="bar", ax=ax_metrics)
+
+    ax_metrics.set_title("Vergleich der Modellmetriken")
+    ax_metrics.set_ylabel("Wert")
+    ax_metrics.set_xlabel("Modell")
+    ax_metrics.legend(title="Metrik")
+
+    st.pyplot(fig_metrics)
